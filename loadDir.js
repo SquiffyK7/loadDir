@@ -4,37 +4,50 @@ const fs    = require("fs")
 function loadDir(dir) {
   return new Promise((pass, fail) => {
     const acc = {}
+    const errors = []
+    let barrier = new Barrier(1)
 
     function Barrier(size) {
       this.size = size
       this.hit = function() {
         this.size--
-        if(!this.size)
-          pass(acc)
+        if(!this.size) {
+          if(!errors.length) {
+            pass(acc)
+          } else {
+            fail("Errors loading directory:\n"+errors.join('\n'))
+          }
+        }
       }
     }
-    let barrier = new Barrier(1)
 
     function loadDir(dir, JSON) {
       fs.readdir(dir, (err, files) => {
-        barrier.size += files.length
-        barrier.hit()
+        if(err) {
+          errors.push("Error reading directory: "+err)
+          barrier.hit()
+        } else {
+          barrier.size += files.length
+          barrier.hit()
 
-        if(err) console.error("Error on readdir,",err)
-        files.forEach((file) => {
-          let filePath = path.join(dir, file)
+          files.forEach((file) => {
+            let filePath = path.join(dir, file)
 
-          fs.stat(filePath, (err, stats) => {
-            if(err) console.error("Error on stats,", err)
-            if(stats.isDirectory()) {
-              JSON[file] = {}
-              loadDir(path.join(dir, file), JSON[file])
-            } else {
-              JSON[file.slice(0, -5)] = file
-              barrier.hit()
-            }
+            fs.stat(filePath, (err, stats) => {
+              if(err) {
+                errors.push("Error stating file: "+err)
+              } else {
+                if(stats.isDirectory()) {
+                  JSON[file] = {}
+                  loadDir(path.join(dir, file), JSON[file])
+                } else {
+                  JSON[file.slice(0, -5)] = file
+                  barrier.hit()
+                }
+              }
+            })
           })
-        })
+        }
       })
     }
 
@@ -42,7 +55,7 @@ function loadDir(dir) {
   })
 }
 
-loadDir("./Telemetricor/Bumble/JSQL/tests/res/jsql")
+loadDir("../Telemetricor/Bumble/JSQL/tests/res/jsql")
   .then((JSON) => {
     console.log("Finished:", JSON)
   })
