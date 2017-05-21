@@ -35,7 +35,8 @@ function loadDir(dir) {
 
             fs.stat(filePath, (err, stats) => {
               if(err) {
-                errors.push("Error stating file: "+err)
+                errors.push("Error statting file: "+err)
+                barrier.hit()
               } else {
                 if(stats.isDirectory()) {
                   JSON[file] = {}
