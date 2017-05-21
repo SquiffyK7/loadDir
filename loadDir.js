@@ -56,7 +56,7 @@ function loadDir(dir) {
   })
 }
 
-loadDir("../Telemetricor/Bumble/JSQL/tests/res/jsql")
+loadDir("jsql")
   .then((JSON) => {
     console.log("Finished:", JSON)
   })
